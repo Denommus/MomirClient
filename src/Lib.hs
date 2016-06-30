@@ -55,4 +55,5 @@ mainView = mainWidget $ el "div" $ do
   let widgetToInsert = leftmost [iWidget, lWidget]
   _ <- el "div" $
     dyn =<< holdDyn (text "Insert a number and click Search") widgetToInsert
-  return ()
+  el "p" $ text "The program fetches data that is Copyright © Wizards of the Coast - All Rights Reserved"
+  el "p" $ text "The program is not affiliated with Wizards of the Coast in any way."
