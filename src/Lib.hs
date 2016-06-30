@@ -4,6 +4,26 @@ module Lib
 import Reflex.Dom
 import Safe (readMay)
 import qualified Data.Map as Map
+import Data.Text (unpack)
+
+buildRequest :: Integer -> XhrRequest
+buildRequest cmc = xhrRequest "GET"
+  ("http://pure-dusk-35542.herokuapp.com/" ++ show cmc) def
+
+loadingWidget :: (MonadWidget t m) => a -> m ()
+loadingWidget _ = text "Loading"
+
+imageWidget :: (MonadWidget t m) => Maybe String -> m ()
+imageWidget (Just img) = emptyElWith "img" $ def
+                  & elConfig_attributes .~ ("src" =: img)
+imageWidget Nothing = text "Unknown error"
+
+resultWidget :: (MonadWidget t m) => XhrResponse -> m ()
+resultWidget res
+  | _xhrResponse_status res==404 = text "No card with this cmc found"
+  | _xhrResponse_status res==200 = imageWidget $ unpack <$>
+                                   _xhrResponse_responseText res
+  | otherwise = text "Unknown error"
 
 searchButton :: (MonadWidget t m) =>
   Dynamic t (Maybe Integer) -> m (Event t Integer)
@@ -14,7 +34,7 @@ searchButton cmc = do
   return $ push filterNumber $ tagDyn cmc clickEvent
     where disabled (Just x)
             | x >= 0 = Map.empty
-          disabled _  = Map.fromList [("disabled", "")]
+          disabled _  = "disabled" =: ""
           filterNumber (Just x)
             | x >= 0 = return $ Just x
           filterNumber _ = return Nothing
@@ -27,5 +47,12 @@ cmcWidget = do
 mainView :: IO ()
 mainView = mainWidget $ el "div" $ do
   cmc <- cmcWidget
-  _ <- searchButton cmc
+  cmcRequested <- searchButton cmc
+  let request = buildRequest <$> cmcRequested
+  response <- performRequestAsync request
+  let lWidget = loadingWidget <$> cmcRequested
+  let iWidget = resultWidget <$> response
+  let widgetToInsert = leftmost [iWidget, lWidget]
+  _ <- el "div" $
+    dyn =<< holdDyn (text "Insert a number and click Search") widgetToInsert
   return ()
