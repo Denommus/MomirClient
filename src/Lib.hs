@@ -5,6 +5,7 @@ import Reflex.Dom
 import Safe (readMay)
 import qualified Data.Map as Map
 import Data.Text (unpack)
+import Data.Monoid ((<>))
 
 buildRequest :: Integer -> XhrRequest
 buildRequest cmc = xhrRequest "GET"
@@ -41,7 +42,11 @@ searchButton cmc = do
 
 cmcWidget :: (MonadWidget t m) => m (Dynamic t (Maybe Integer))
 cmcWidget = do
-  t <- textInput $ def & textInputConfig_inputType .~ "number"
+  t <- textInput $ def & textInputConfig_inputType .~ "range"
+                       & textInputConfig_initialValue .~ "0"
+                       & textInputConfig_attributes .~ constDyn ("min" =: "0"
+                                                                 <> "max" =: "16")
+  dynText $ _textInput_value t
   mapDyn readMay $ _textInput_value t
 
 mainView :: IO ()
@@ -55,5 +60,6 @@ mainView = mainWidget $ el "div" $ do
   let widgetToInsert = leftmost [iWidget, lWidget]
   _ <- el "div" $
     dyn =<< holdDyn (text "Insert a number and click Search") widgetToInsert
-  el "p" $ text "The program fetches data that is Copyright © Wizards of the Coast - All Rights Reserved"
-  el "p" $ text "The program is not affiliated with Wizards of the Coast in any way."
+  el "footer" $ do
+    el "p" $ text "The program fetches data that is Copyright © Wizards of the Coast - All Rights Reserved"
+    el "p" $ text "The program is not affiliated with Wizards of the Coast in any way."
