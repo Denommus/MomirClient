@@ -46,7 +46,7 @@ cmcWidget = do
                        & textInputConfig_initialValue .~ "0"
                        & textInputConfig_attributes .~ constDyn ("min" =: "0"
                                                                  <> "max" =: "16")
-  dynText $ _textInput_value t
+  el "span" $ dynText $ _textInput_value t
   mapDyn readMay $ _textInput_value t
 
 mainView :: IO ()
